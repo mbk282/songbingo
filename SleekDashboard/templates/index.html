@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify Guess Game</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <script>
+        const accessToken = "{{ access_token }}";
+    </script>
+</head>
+<body>
+    <!-- Background gradient overlay -->
+    <div class="bg-overlay"></div>
+    
+    <div class="container-fluid main-container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-10 col-lg-8 col-xl-6">
+                <!-- Header -->
+                <div class="text-center mb-5">
+                    <div class="logo-container mb-3">
+                        <i class="fab fa-spotify spotify-icon"></i>
+                    </div>
+                    <h1 class="main-title">Spotify Guess Game</h1>
+                    <p class="subtitle">Test your music knowledge with random tracks from your playlists</p>
+                </div>
+
+                <!-- Game Card -->
+                <div class="game-card">
+                    <!-- Playlist Selection Section -->
+                    <div class="input-section mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-list-music me-2"></i>Choose Your Playlist
+                        </label>
+                        
+                        <!-- Preset Playlist Selection -->
+                        <div class="mb-3">
+                            <select id="presetPlaylist" class="form-select preset-select" onchange="selectPresetPlaylist()">
+                                <option value="https://open.spotify.com/playlist/0QWuYOuRCyhZrLKI5p1XgN?si=rMjrlyWGSKqdhKC0SVsHjQ">🎵 Millennial Hits</option>
+                                <option value="https://open.spotify.com/playlist/1DTzz7Nh2rJBnyFbjsH1Mh">📻 Top 2000</option>
+                                <option value="https://open.spotify.com/playlist/5l2hgSzfMqBRMumwZZjlE7">🎤 Hip Hop Hidden Gems</option>
+                                <option value="https://open.spotify.com/playlist/0jqy8vLmICnwqsijP1Jxrg">🎸 After 2000</option>
+                                <option value="https://open.spotify.com/playlist/37i9dQZF1DX0IlCGIUGBsA">🕺 Party All Time</option>
+                                <option value="custom">🔗 Custom Playlist URL</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Custom URL Input (hidden by default) -->
+                        <div id="customUrlSection" class="input-group" style="display: none;">
+                            <span class="input-group-text">
+                                <i class="fab fa-spotify"></i>
+                            </span>
+                            <input 
+                                type="text" 
+                                id="customPlaylist" 
+                                class="form-control" 
+                                placeholder="https://open.spotify.com/playlist/..." 
+                            >
+                        </div>
+                        
+                        <!-- Hidden input that holds the actual playlist URL -->
+                        <input type="hidden" id="playlist" value="https://open.spotify.com/playlist/0QWuYOuRCyhZrLKI5p1XgN?si=rMjrlyWGSKqdhKC0SVsHjQ">
+                    </div>
+
+                    <!-- Playback Mode Selection -->
+                    <div class="input-section mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-music me-2"></i>Playback Mode
+                        </label>
+                        <div class="playback-mode-selector">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <input type="radio" class="btn-check" name="playbackMode" id="webPlayer" value="web" checked>
+                                    <label class="btn btn-outline-light w-100 playback-option" for="webPlayer">
+                                        <i class="fas fa-globe me-2"></i>
+                                        <div class="option-content">
+                                            <div class="option-title">Web Player</div>
+                                            <div class="option-subtitle">Works for all users</div>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="col-6">
+                                    <input type="radio" class="btn-check" name="playbackMode" id="nativePlayer" value="native">
+                                    <label class="btn btn-outline-light w-100 playback-option" for="nativePlayer">
+                                        <i class="fab fa-spotify me-2"></i>
+                                        <div class="option-content">
+                                            <div class="option-title">Native Spotify</div>
+                                            <div class="option-subtitle">Premium required</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="playback-info mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                <span id="playbackModeInfo">Web Player works in your browser for all Spotify users</span>
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Game Controls -->
+                    <div class="controls-section mb-4">
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <button id="startBtn" class="btn btn-primary btn-game w-100" onclick="startGame()" disabled>
+                                    <i class="fas fa-play me-2"></i>Start Game
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button id="nextBtn" class="btn btn-secondary btn-game w-100" onclick="nextTrack()" disabled>
+                                    <i class="fas fa-forward me-2"></i>Next Track
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-3 mt-2">
+                            <div class="col-3">
+                                <button class="btn btn-outline-light btn-control w-100" onclick="pauseTrack()">
+                                    <i class="fas fa-pause"></i>
+                                    <span class="d-none d-sm-inline ms-1">Pause</span>
+                                </button>
+                            </div>
+                            <div class="col-3">
+                                <button class="btn btn-outline-light btn-control w-100" onclick="replayTrack()">
+                                    <i class="fas fa-redo"></i>
+                                    <span class="d-none d-sm-inline ms-1">Replay</span>
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-success btn-show-answer w-100" onclick="showAnswer()">
+                                    <i class="fas fa-eye me-2"></i>Show Answer
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Player Status -->
+                    <div id="playerStatus" class="player-status">
+                        <div class="status-indicator">
+                            <div class="loading-spinner"></div>
+                            <span class="status-text">Initializing Spotify Player...</span>
+                        </div>
+                    </div>
+
+                    <!-- Current Track Info -->
+                    <div id="trackInfo" class="track-info" style="display: none;">
+                        <div class="track-display">
+                            <div class="track-icon">
+                                <i class="fas fa-music"></i>
+                            </div>
+                            <div class="track-details">
+                                <div class="track-status">Now Playing</div>
+                                <div class="track-title">Track loaded - make your guess!</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Answer Section -->
+                    <div id="answer" class="answer-section" style="display: none;">
+                        <div class="answer-card">
+                            <div class="answer-header">
+                                <i class="fas fa-lightbulb me-2"></i>Answer
+                            </div>
+                            <div id="answerContent" class="answer-content"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Instructions -->
+                <div class="instructions-card mt-4">
+                    <h5><i class="fas fa-info-circle me-2"></i>How to Play</h5>
+                    <ol class="instructions-list">
+                        <li>Paste a Spotify playlist URL above</li>
+                        <li>Click "Start Game" to begin</li>
+                        <li>Listen to the random track and guess the song</li>
+                        <li>Use "Show Answer" to reveal the track details</li>
+                        <li>Click "Next Track" for a new challenge!</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://sdk.scdn.co/spotify-player.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
